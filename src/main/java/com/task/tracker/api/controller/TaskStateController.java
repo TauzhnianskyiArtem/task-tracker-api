@@ -1,6 +1,7 @@
 package com.task.tracker.api.controller;
 
 
+import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.TaskStateDto;
 import com.task.tracker.api.exception.BadRequestException;
 import com.task.tracker.api.exception.NotFoundException;
@@ -78,18 +79,20 @@ public class TaskStateController {
         if(isCreate && !optionalTaskStateName.isPresent() && !optionalTaskStateOrdinal.isPresent())
             throw new BadRequestException(String.format("Task state name or ordinal can`t be empty"));
 
-        TaskStateEntity taskState = optionalTakStateId
+        final TaskStateEntity taskState = optionalTakStateId
                 .map(this::getTaskStateEntityOrThrowException)
                 .orElseGet(() -> TaskStateEntity.builder().build());
+
+        taskState.setProject(projectEntity);
 
         optionalTaskStateName
                 .ifPresent(taskStateName -> {
 
                     taskStateRepository
                             .findByNameAndProject(taskStateName, projectEntity)
-                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
-                            .ifPresent(anotherProject -> {
-                                throw new BadRequestException(
+                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .ifPresent((anotherTaskState) -> {
+                                 throw new BadRequestException(
                                         String.format("Task state '%s' already exists.", taskStateName)
                                 );
                             });
@@ -101,10 +104,10 @@ public class TaskStateController {
 
                     taskStateRepository
                             .findByOrdinalAndProject(taskStateOrdinal, projectEntity)
-                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
-                            .ifPresent(anotherProject -> {
-                                throw new BadRequestException(
-                                        String.format("Task state with '%s' already exists.", taskStateOrdinal)
+                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .ifPresent((anotherTaskState) -> {
+                                 throw  new BadRequestException(
+                                        String.format("Task state with '%s' ordinal already exists.", taskStateOrdinal)
                                 );
                             });
                     taskState.setOrdinal(taskStateOrdinal);
@@ -113,6 +116,20 @@ public class TaskStateController {
         TaskStateEntity savedTaskState = taskStateRepository.saveAndFlush(taskState);
 
         return taskStateDtoFactory.makeTaskStateDto(savedTaskState);
+    }
+
+    @DeleteMapping(DELETE_TASK_STATE)
+    public ResponseEntity<AckDto> deleteTaskState(
+            @PathVariable("project_id") Long projectId,
+            @PathVariable("task_state_id") Long taskStateId){
+
+        getProjectEntityOrThrowException(projectId);
+
+        getTaskStateEntityOrThrowException(taskStateId);
+
+        taskStateRepository.deleteById(taskStateId);
+
+        return ResponseEntity.ok(AckDto.makeDefault(true));
     }
 
     private ProjectEntity getProjectEntityOrThrowException(Long projectId) {
