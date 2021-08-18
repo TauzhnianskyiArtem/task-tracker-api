@@ -1,0 +1,10 @@
+
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost/task-tracker-api
+    username: postgres
+    password: 121art121
+  jpa:
+    hibernate:
+      ddl-auto: update
