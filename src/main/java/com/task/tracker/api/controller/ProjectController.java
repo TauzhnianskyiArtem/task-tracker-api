@@ -65,7 +65,7 @@ public class ProjectController {
 
         final ProjectEntity project = optionalProjectId
                 .map(this::getProjectOrThrowException)
-                .orElseGet(() -> ProjectEntity.builder().build());
+                .orElseGet(ProjectEntity::new);
 
         optionalProjectName
                 .ifPresent(projectName -> {

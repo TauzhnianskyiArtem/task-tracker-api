@@ -37,7 +37,6 @@ public class TaskStateController {
 
     public static final String FETCH_TASK_STATES = "/api/projects/{project_id}/task_states";
     public static final String DELETE_TASK_STATE = "/api/projects/{project_id}/task_states/{task_state_id}";
-
     public static final String CREATE_OR_UPDATE_TASK_STATE = "/api/projects/{project_id}/task_states";
 
     @GetMapping(FETCH_TASK_STATES)
@@ -67,8 +66,7 @@ public class TaskStateController {
             @PathVariable("project_id") Long projectId,
             @RequestParam(value = "task_state_id", required = false) Optional<Long> optionalTakStateId,
             @RequestParam(value = "task_state_name", required = false) Optional<String> optionalTaskStateName,
-            @RequestParam(value = "task_state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal
-    ){
+            @RequestParam(value = "task_state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal){
 
         ProjectEntity projectEntity = getProjectEntityOrThrowException(projectId);
 
@@ -81,7 +79,7 @@ public class TaskStateController {
 
         final TaskStateEntity taskState = optionalTakStateId
                 .map(this::getTaskStateEntityOrThrowException)
-                .orElseGet(() -> TaskStateEntity.builder().build());
+                .orElseGet(TaskStateEntity::new);
 
         taskState.setProject(projectEntity);
 
