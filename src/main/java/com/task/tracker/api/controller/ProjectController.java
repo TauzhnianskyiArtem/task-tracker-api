@@ -26,9 +26,12 @@ import java.util.stream.Stream;
 @RestController
 public class ProjectController {
 
+    ControllerHelper controllerHelper;
+
     ProjectDtoFactory projectDtoFactory;
 
     ProjectRepository projectRepository;
+
 
     public static final String FETCH_PROJECTS = "/api/projects";
     public static final String DELETE_PROJECT = "/api/projects/{project_id}";
@@ -64,7 +67,7 @@ public class ProjectController {
             throw new BadRequestException(String.format("Project name can`t be empty"));
 
         final ProjectEntity project = optionalProjectId
-                .map(this::getProjectOrThrowException)
+                .map(controllerHelper::getProjectEntityOrThrowException)
                 .orElseGet(ProjectEntity::new);
 
         optionalProjectName
@@ -92,23 +95,12 @@ public class ProjectController {
     @DeleteMapping(DELETE_PROJECT)
     public ResponseEntity<AckDto> deleteProject(@PathVariable("project_id") Long projectId) {
 
-        getProjectOrThrowException(projectId);
+        controllerHelper.getProjectEntityOrThrowException(projectId);
 
         projectRepository.deleteById(projectId);
 
         return ResponseEntity.ok(AckDto.makeDefault(true));
     }
 
-    private ProjectEntity getProjectOrThrowException(Long projectId) {
 
-        return projectRepository
-                .findById(projectId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format(
-                                        "Project with \"%s\" doesn't exist.",
-                                        projectId
-                                )
-                        ));
-    }
 }
