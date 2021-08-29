@@ -26,12 +26,9 @@ import java.util.stream.Stream;
 @RestController
 public class ProjectController {
 
-    ControllerHelper controllerHelper;
-
     ProjectDtoFactory projectDtoFactory;
 
     ProjectRepository projectRepository;
-
 
     public static final String FETCH_PROJECTS = "/api/projects";
     public static final String DELETE_PROJECT = "/api/projects/{project_id}";
@@ -45,7 +42,7 @@ public class ProjectController {
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
         Stream<ProjectEntity> projectStream = optionalPrefixName
                 .map(projectRepository::streamAllByNameContainingIgnoreCase)
-                .orElseGet(projectRepository::streamAllBy);
+                .orElseGet(() -> projectRepository.findAll().stream());
 
         return ResponseEntity.ok(projectStream
                 .map(projectDtoFactory::makeProjectDto)
@@ -67,7 +64,7 @@ public class ProjectController {
             throw new BadRequestException(String.format("Project name can`t be empty"));
 
         final ProjectEntity project = optionalProjectId
-                .map(controllerHelper::getProjectEntityOrThrowException)
+                .map(this::getProjectOrThrowException)
                 .orElseGet(ProjectEntity::new);
 
         optionalProjectName
@@ -95,11 +92,23 @@ public class ProjectController {
     @DeleteMapping(DELETE_PROJECT)
     public ResponseEntity<AckDto> deleteProject(@PathVariable("project_id") Long projectId) {
 
-        controllerHelper.getProjectEntityOrThrowException(projectId);
+        getProjectOrThrowException(projectId);
 
         projectRepository.deleteById(projectId);
 
         return ResponseEntity.ok(AckDto.makeDefault(true));
     }
 
+    private ProjectEntity getProjectOrThrowException(Long projectId) {
+
+        return projectRepository
+                .findById(projectId)
+                .orElseThrow(() ->
+                        new NotFoundException(
+                                String.format(
+                                        "Project with \"%s\" doesn't exist.",
+                                        projectId
+                                )
+                        ));
+    }
 }
