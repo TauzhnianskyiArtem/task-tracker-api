@@ -42,7 +42,7 @@ public class ProjectController {
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
         Stream<ProjectEntity> projectStream = optionalPrefixName
                 .map(projectRepository::streamAllByNameContainingIgnoreCase)
-                .orElseGet(() -> projectRepository.findAll().stream());
+                .orElseGet(projectRepository::streamAllBy);
 
         return ResponseEntity.ok(projectStream
                 .map(projectDtoFactory::makeProjectDto)
@@ -106,7 +106,7 @@ public class ProjectController {
                 .orElseThrow(() ->
                         new NotFoundException(
                                 String.format(
-                                        "Project with \"%s\" doesn't exist.",
+                                        "Project with '%s doesn't exist.",
                                         projectId
                                 )
                         ));

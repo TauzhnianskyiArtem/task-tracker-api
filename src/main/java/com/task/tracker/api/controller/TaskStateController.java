@@ -88,7 +88,7 @@ public class TaskStateController {
 
                     taskStateRepository
                             .findByNameAndProject(taskStateName, projectEntity)
-                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
                             .ifPresent((anotherTaskState) -> {
                                  throw new BadRequestException(
                                         String.format("Task state '%s' already exists.", taskStateName)
@@ -102,7 +102,7 @@ public class TaskStateController {
 
                     taskStateRepository
                             .findByOrdinalAndProject(taskStateOrdinal, projectEntity)
-                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
                             .ifPresent((anotherTaskState) -> {
                                  throw  new BadRequestException(
                                         String.format("Task state with '%s' ordinal already exists.", taskStateOrdinal)

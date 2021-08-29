@@ -34,13 +34,13 @@ public class TaskController {
 
     TaskStateRepository taskStateRepository;
 
-    public static final String FETCH_TASKS = "/api/projects/task_states/{task_state_id}/tasks";
-    public static final String DELETE_TASK = "/api/projects/task_states/{task_state_id}/tasks/{task_id}";
-    public static final String CREATE_OR_UPDATE_TASK = "/api/projects/task_states/{task_state_id}/tasks";
+    public static final String FETCH_TASKS = "/api/projects/task-states/{task-state_id}/tasks";
+    public static final String DELETE_TASK = "/api/projects/task-states/{task-state_id}/tasks/{task_id}";
+    public static final String CREATE_OR_UPDATE_TASK = "/api/projects/task-states/{task-state_id}/tasks";
 
     @GetMapping(FETCH_TASKS)
     public ResponseEntity<List<TaskDto>> fetchTasks(
-            @PathVariable("task_state_id") Long taskStateId,
+            @PathVariable("task-state_id") Long taskStateId,
             @RequestParam(value = "prefix_name", required = false) Optional<String> optionalPrefixName) {
 
         TaskStateEntity taskStateEntity = getTaskStateEntityOrThrowException(taskStateId);
@@ -60,7 +60,7 @@ public class TaskController {
 
     @PostMapping(CREATE_OR_UPDATE_TASK)
     public ResponseEntity<TaskDto> createOrUpdateTask(
-            @PathVariable("task_state_id") Long taskStateId,
+            @PathVariable("task-state_id") Long taskStateId,
             @RequestParam(value = "task_id", required = false) Optional<Long> optionalTaskId,
             @RequestParam(value = "task_name", required = false) Optional<String> optionalTaskName,
             @RequestParam(value = "task_description", required = false) Optional<String> optionalTaskDescription) {
@@ -92,9 +92,7 @@ public class TaskController {
             taskEntity.setName(taskName);
         });
 
-        optionalTaskDescription.ifPresent((taskDescription) -> {
-            taskEntity.setDescription(taskDescription);
-        });
+        optionalTaskDescription.ifPresent(taskEntity::setDescription);
 
         TaskEntity savedTask = taskRepository.saveAndFlush(taskEntity);
 
@@ -105,7 +103,7 @@ public class TaskController {
     @DeleteMapping(DELETE_TASK)
     public ResponseEntity<AckDto> deleteTask(
             @PathVariable("task_id") Long taskId,
-            @PathVariable("task_state_id") Long taskStateId) {
+            @PathVariable("task-state_id") Long taskStateId) {
 
         getTaskStateEntityOrThrowException(taskStateId);
 
