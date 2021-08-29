@@ -1,10 +1,10 @@
 package com.task.tracker.api.controller;
 
 
+import com.task.tracker.api.controller.helper.ControllerHelper;
 import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.TaskStateDto;
 import com.task.tracker.api.exception.BadRequestException;
-import com.task.tracker.api.exception.NotFoundException;
 import com.task.tracker.api.factory.TaskStateDtoFactory;
 import com.task.tracker.store.entity.ProjectEntity;
 import com.task.tracker.store.entity.TaskStateEntity;
@@ -29,22 +29,25 @@ import java.util.stream.Stream;
 @RestController
 public class TaskStateController {
 
+    ControllerHelper controllerHelper;
+
+    ProjectRepository projectRepository;
+
     TaskStateRepository taskStateRepository;
 
     TaskStateDtoFactory taskStateDtoFactory;
 
-    ProjectRepository projectRepository;
 
-    public static final String FETCH_TASK_STATES = "/api/projects/{project_id}/task_states";
-    public static final String DELETE_TASK_STATE = "/api/projects/{project_id}/task_states/{task_state_id}";
-    public static final String CREATE_OR_UPDATE_TASK_STATE = "/api/projects/{project_id}/task_states";
+    public static final String FETCH_TASK_STATES = "/api/projects/{project_id}/task-states";
+    public static final String DELETE_TASK_STATE = "/api/projects/{project_id}/task-states/{task-state_id}";
+    public static final String CREATE_OR_UPDATE_TASK_STATE = "/api/projects/{project_id}/task-states";
 
     @GetMapping(FETCH_TASK_STATES)
     public ResponseEntity<List<TaskStateDto>> fetchTaskStates(
             @PathVariable("project_id") Long projectId,
             @RequestParam(value = "prefix_name", required = false) Optional<String> optionalPrefixName){
 
-        ProjectEntity projectEntity = getProjectEntityOrThrowException(projectId);
+        ProjectEntity projectEntity = controllerHelper.getProjectEntityOrThrowException(projectId);
 
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
 
@@ -68,7 +71,7 @@ public class TaskStateController {
             @RequestParam(value = "task_state_name", required = false) Optional<String> optionalTaskStateName,
             @RequestParam(value = "task_state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal){
 
-        ProjectEntity projectEntity = getProjectEntityOrThrowException(projectId);
+        ProjectEntity projectEntity = controllerHelper.getProjectEntityOrThrowException(projectId);
 
         optionalTaskStateName = optionalTaskStateName.filter(name -> !name.trim().isEmpty());
 
@@ -78,7 +81,7 @@ public class TaskStateController {
             throw new BadRequestException(String.format("Task state name or ordinal can`t be empty"));
 
         final TaskStateEntity taskState = optionalTakStateId
-                .map(this::getTaskStateEntityOrThrowException)
+                .map(controllerHelper::getTaskStateEntityOrThrowException)
                 .orElseGet(TaskStateEntity::new);
 
         taskState.setProject(projectEntity);
@@ -88,7 +91,7 @@ public class TaskStateController {
 
                     taskStateRepository
                             .findByNameAndProject(taskStateName, projectEntity)
-                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
                             .ifPresent((anotherTaskState) -> {
                                  throw new BadRequestException(
                                         String.format("Task state '%s' already exists.", taskStateName)
@@ -102,7 +105,7 @@ public class TaskStateController {
 
                     taskStateRepository
                             .findByOrdinalAndProject(taskStateOrdinal, projectEntity)
-                            .filter(anotherTaskState -> Objects.equals(anotherTaskState.getId(), taskState.getId()))
+                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
                             .ifPresent((anotherTaskState) -> {
                                  throw  new BadRequestException(
                                         String.format("Task state with '%s' ordinal already exists.", taskStateOrdinal)
@@ -119,33 +122,15 @@ public class TaskStateController {
     @DeleteMapping(DELETE_TASK_STATE)
     public ResponseEntity<AckDto> deleteTaskState(
             @PathVariable("project_id") Long projectId,
-            @PathVariable("task_state_id") Long taskStateId){
+            @PathVariable("task-state_id") Long taskStateId){
 
-        getProjectEntityOrThrowException(projectId);
+        controllerHelper.getProjectEntityOrThrowException(projectId);
 
-        getTaskStateEntityOrThrowException(taskStateId);
+        controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
 
         taskStateRepository.deleteById(taskStateId);
 
         return ResponseEntity.ok(AckDto.makeDefault(true));
-    }
-
-    private ProjectEntity getProjectEntityOrThrowException(Long projectId) {
-        return projectRepository
-                .findById(projectId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format("Project with '%s' doesn't exist.", projectId
-                                )));
-    }
-
-    private TaskStateEntity getTaskStateEntityOrThrowException(Long taskStateId) {
-        return taskStateRepository
-                .findById(taskStateId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format("Task state with '%s' doesn't exist.", taskStateId
-                                )));
     }
 
 }

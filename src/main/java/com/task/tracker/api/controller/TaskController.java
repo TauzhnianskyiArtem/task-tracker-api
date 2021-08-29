@@ -1,14 +1,13 @@
 package com.task.tracker.api.controller;
 
+import com.task.tracker.api.controller.helper.ControllerHelper;
 import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.TaskDto;
 import com.task.tracker.api.exception.BadRequestException;
-import com.task.tracker.api.exception.NotFoundException;
 import com.task.tracker.api.factory.TaskDtoFactory;
 import com.task.tracker.store.entity.TaskEntity;
 import com.task.tracker.store.entity.TaskStateEntity;
 import com.task.tracker.store.repository.TaskRepository;
-import com.task.tracker.store.repository.TaskStateRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -32,18 +31,19 @@ public class TaskController {
 
     TaskRepository taskRepository;
 
-    TaskStateRepository taskStateRepository;
+    ControllerHelper controllerHelper;
 
-    public static final String FETCH_TASKS = "/api/projects/task_states/{task_state_id}/tasks";
-    public static final String DELETE_TASK = "/api/projects/task_states/{task_state_id}/tasks/{task_id}";
-    public static final String CREATE_OR_UPDATE_TASK = "/api/projects/task_states/{task_state_id}/tasks";
+
+    public static final String FETCH_TASKS = "/api/projects/task-states/{task-state_id}/tasks";
+    public static final String DELETE_TASK = "/api/projects/task-states/{task-state_id}/tasks/{task_id}";
+    public static final String CREATE_OR_UPDATE_TASK = "/api/projects/task-states/{task-state_id}/tasks";
 
     @GetMapping(FETCH_TASKS)
     public ResponseEntity<List<TaskDto>> fetchTasks(
-            @PathVariable("task_state_id") Long taskStateId,
+            @PathVariable("task-state_id") Long taskStateId,
             @RequestParam(value = "prefix_name", required = false) Optional<String> optionalPrefixName) {
 
-        TaskStateEntity taskStateEntity = getTaskStateEntityOrThrowException(taskStateId);
+        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
 
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
 
@@ -60,12 +60,12 @@ public class TaskController {
 
     @PostMapping(CREATE_OR_UPDATE_TASK)
     public ResponseEntity<TaskDto> createOrUpdateTask(
-            @PathVariable("task_state_id") Long taskStateId,
+            @PathVariable("task-state_id") Long taskStateId,
             @RequestParam(value = "task_id", required = false) Optional<Long> optionalTaskId,
             @RequestParam(value = "task_name", required = false) Optional<String> optionalTaskName,
             @RequestParam(value = "task_description", required = false) Optional<String> optionalTaskDescription) {
 
-        TaskStateEntity taskStateEntity = getTaskStateEntityOrThrowException(taskStateId);
+        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
 
         optionalTaskName = optionalTaskName.filter(name -> !name.trim().isEmpty());
         optionalTaskDescription = optionalTaskDescription.filter(description -> !description.trim().isEmpty());
@@ -76,7 +76,7 @@ public class TaskController {
             throw new BadRequestException(String.format("Task name can`t be empty"));
 
         TaskEntity taskEntity = optionalTaskId
-                .map(this::getTaskEntityOrThrowException)
+                .map(controllerHelper::getTaskEntityOrThrowException)
                 .orElseGet(TaskEntity::new);
 
         taskEntity.setTaskState(taskStateEntity);
@@ -92,9 +92,7 @@ public class TaskController {
             taskEntity.setName(taskName);
         });
 
-        optionalTaskDescription.ifPresent((taskDescription) -> {
-            taskEntity.setDescription(taskDescription);
-        });
+        optionalTaskDescription.ifPresent(taskEntity::setDescription);
 
         TaskEntity savedTask = taskRepository.saveAndFlush(taskEntity);
 
@@ -105,29 +103,14 @@ public class TaskController {
     @DeleteMapping(DELETE_TASK)
     public ResponseEntity<AckDto> deleteTask(
             @PathVariable("task_id") Long taskId,
-            @PathVariable("task_state_id") Long taskStateId) {
+            @PathVariable("task-state_id") Long taskStateId) {
 
-        getTaskStateEntityOrThrowException(taskStateId);
+        controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
 
-        getTaskEntityOrThrowException(taskId);
+        controllerHelper.getTaskEntityOrThrowException(taskId);
 
         taskRepository.deleteById(taskId);
         return ResponseEntity.ok(AckDto.makeDefault(true));
     }
 
-    private TaskEntity getTaskEntityOrThrowException(Long taskId) {
-        return taskRepository.findById(taskId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format("Task with '%s' doesn't exist.", taskId)
-                        ));
-    }
-
-    private TaskStateEntity getTaskStateEntityOrThrowException(Long taskStateId) {
-        return taskStateRepository.findById(taskStateId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format("Task state with '%s' doesn't exist.", taskStateId)
-                        ));
-    }
 }

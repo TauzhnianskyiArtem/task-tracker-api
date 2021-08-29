@@ -1,9 +1,9 @@
 package com.task.tracker.api.controller;
 
+import com.task.tracker.api.controller.helper.ControllerHelper;
 import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.ProjectDto;
 import com.task.tracker.api.exception.BadRequestException;
-import com.task.tracker.api.exception.NotFoundException;
 import com.task.tracker.api.factory.ProjectDtoFactory;
 import com.task.tracker.store.entity.ProjectEntity;
 import com.task.tracker.store.repository.ProjectRepository;
@@ -26,9 +26,12 @@ import java.util.stream.Stream;
 @RestController
 public class ProjectController {
 
+    ControllerHelper controllerHelper;
+
     ProjectDtoFactory projectDtoFactory;
 
     ProjectRepository projectRepository;
+
 
     public static final String FETCH_PROJECTS = "/api/projects";
     public static final String DELETE_PROJECT = "/api/projects/{project_id}";
@@ -42,7 +45,7 @@ public class ProjectController {
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
         Stream<ProjectEntity> projectStream = optionalPrefixName
                 .map(projectRepository::streamAllByNameContainingIgnoreCase)
-                .orElseGet(() -> projectRepository.findAll().stream());
+                .orElseGet(projectRepository::streamAllBy);
 
         return ResponseEntity.ok(projectStream
                 .map(projectDtoFactory::makeProjectDto)
@@ -64,7 +67,7 @@ public class ProjectController {
             throw new BadRequestException(String.format("Project name can`t be empty"));
 
         final ProjectEntity project = optionalProjectId
-                .map(this::getProjectOrThrowException)
+                .map(controllerHelper::getProjectEntityOrThrowException)
                 .orElseGet(ProjectEntity::new);
 
         optionalProjectName
@@ -92,23 +95,11 @@ public class ProjectController {
     @DeleteMapping(DELETE_PROJECT)
     public ResponseEntity<AckDto> deleteProject(@PathVariable("project_id") Long projectId) {
 
-        getProjectOrThrowException(projectId);
+        controllerHelper.getProjectEntityOrThrowException(projectId);
 
         projectRepository.deleteById(projectId);
 
         return ResponseEntity.ok(AckDto.makeDefault(true));
     }
 
-    private ProjectEntity getProjectOrThrowException(Long projectId) {
-
-        return projectRepository
-                .findById(projectId)
-                .orElseThrow(() ->
-                        new NotFoundException(
-                                String.format(
-                                        "Project with \"%s\" doesn't exist.",
-                                        projectId
-                                )
-                        ));
-    }
 }
