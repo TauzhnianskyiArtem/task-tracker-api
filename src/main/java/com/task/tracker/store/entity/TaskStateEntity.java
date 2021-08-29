@@ -22,7 +22,7 @@ public class TaskStateEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     Long id;
 
-    @Column(unique = true)
+
     String name;
 
     Integer ordinal;

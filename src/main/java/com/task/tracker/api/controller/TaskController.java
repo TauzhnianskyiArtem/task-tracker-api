@@ -80,17 +80,8 @@ public class TaskController {
                 .orElseGet(TaskEntity::new);
 
         taskEntity.setTaskState(taskStateEntity);
-        optionalTaskName.ifPresent((taskName) -> {
-            taskRepository
-                    .findByName(taskName)
-                    .filter((anotherTask) -> !Objects.equals(anotherTask.getId(), taskEntity.getId()))
-                    .ifPresent((anotherTask) -> {
-                        throw new BadRequestException(
-                                String.format("Task state '%s' already exists.", taskName)
-                        );
-                    });
-            taskEntity.setName(taskName);
-        });
+
+        optionalTaskName.ifPresent(taskEntity::setName);
 
         optionalTaskDescription.ifPresent(taskEntity::setDescription);
 

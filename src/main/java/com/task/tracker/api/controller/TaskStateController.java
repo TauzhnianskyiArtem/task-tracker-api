@@ -67,9 +67,9 @@ public class TaskStateController {
     @PostMapping(CREATE_OR_UPDATE_TASK_STATE)
     public TaskStateDto createOrUpdateTaskState(
             @PathVariable("project_id") Long projectId,
-            @RequestParam(value = "task_state_id", required = false) Optional<Long> optionalTakStateId,
-            @RequestParam(value = "task_state_name", required = false) Optional<String> optionalTaskStateName,
-            @RequestParam(value = "task_state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal){
+            @RequestParam(value = "task-state_id", required = false) Optional<Long> optionalTakStateId,
+            @RequestParam(value = "task-state_name", required = false) Optional<String> optionalTaskStateName,
+            @RequestParam(value = "task-state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal){
 
         ProjectEntity projectEntity = controllerHelper.getProjectEntityOrThrowException(projectId);
 
