@@ -2,6 +2,8 @@ package com.task.tracker.api.dto;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.task.tracker.store.entity.ProjectEntity;
+import com.task.tracker.store.entity.TaskEntity;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -26,4 +28,14 @@ public class TaskDto {
 
     @NonNull
     String description;
+
+    public static TaskDto makeDefault(TaskEntity entity){
+
+        return TaskDto.builder()
+                .id(entity.getId())
+                .name(entity.getName())
+                .createdAt(entity.getCreatedAt())
+                .description(entity.getDescription())
+                .build();
+    }
 }

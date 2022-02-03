@@ -24,7 +24,7 @@ public class ControllerHelper {
     TaskStateRepository taskStateRepository;
 
 
-    public ProjectEntity getProjectEntityOrThrowException(Long projectId) {
+    public ProjectEntity getProjectEntity(Long projectId) {
 
         return projectRepository
                 .findById(projectId)
@@ -37,7 +37,7 @@ public class ControllerHelper {
                         ));
     }
 
-    public TaskEntity getTaskEntityOrThrowException(Long taskId) {
+    public TaskEntity getTaskEntity(Long taskId) {
         return taskRepository.findById(taskId)
                 .orElseThrow(() ->
                         new NotFoundException(
@@ -45,7 +45,7 @@ public class ControllerHelper {
                         ));
     }
 
-    public TaskStateEntity getTaskStateEntityOrThrowException(Long taskStateId) {
+    public TaskStateEntity getTaskStateEntity(Long taskStateId) {
         return taskStateRepository
                 .findById(taskStateId)
                 .orElseThrow(() ->

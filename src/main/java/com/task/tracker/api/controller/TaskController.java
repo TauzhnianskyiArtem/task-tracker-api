@@ -1,22 +1,18 @@
 package com.task.tracker.api.controller;
 
 import com.task.tracker.api.controller.helper.ControllerHelper;
-import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.TaskDto;
 import com.task.tracker.api.exception.BadRequestException;
-import com.task.tracker.api.factory.TaskDtoFactory;
 import com.task.tracker.store.entity.TaskEntity;
 import com.task.tracker.store.entity.TaskStateEntity;
 import com.task.tracker.store.repository.TaskRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -26,8 +22,6 @@ import java.util.stream.Stream;
 @Transactional
 @RestController
 public class TaskController {
-
-    TaskDtoFactory taskDtoFactory;
 
     TaskRepository taskRepository;
 
@@ -39,33 +33,25 @@ public class TaskController {
     public static final String CREATE_OR_UPDATE_TASK = "/api/projects/task-states/{task-state_id}/tasks";
 
     @GetMapping(FETCH_TASKS)
-    public ResponseEntity<List<TaskDto>> fetchTasks(
-            @PathVariable("task-state_id") Long taskStateId,
-            @RequestParam(value = "prefix_name", required = false) Optional<String> optionalPrefixName) {
+    public List<TaskDto> fetchTasks(
+            @PathVariable("task-state_id") Long taskStateId) {
 
-        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
+        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntity(taskStateId);
 
-        optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
+        List<TaskEntity> tasks = taskRepository.findByTaskState(taskStateEntity);
 
-        Stream<TaskEntity> taskStream = optionalPrefixName
-                .map((prefixName) -> taskRepository
-                        .streamByNameContainingAndTaskState(prefixName, taskStateEntity))
-                .orElseGet(() -> taskRepository
-                        .streamAllByTaskState(taskStateEntity));
-
-        return ResponseEntity.ok(
-                taskStream.map(taskDtoFactory::makeProjectDto).collect(Collectors.toList()));
+        return tasks.stream().map(TaskDto::makeDefault).collect(Collectors.toList());
 
     }
 
     @PostMapping(CREATE_OR_UPDATE_TASK)
-    public ResponseEntity<TaskDto> createOrUpdateTask(
+    public TaskDto createOrUpdateTask(
             @PathVariable("task-state_id") Long taskStateId,
             @RequestParam(value = "task_id", required = false) Optional<Long> optionalTaskId,
             @RequestParam(value = "task_name", required = false) Optional<String> optionalTaskName,
             @RequestParam(value = "task_description", required = false) Optional<String> optionalTaskDescription) {
 
-        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
+        TaskStateEntity taskStateEntity = controllerHelper.getTaskStateEntity(taskStateId);
 
         optionalTaskName = optionalTaskName.filter(name -> !name.trim().isEmpty());
         optionalTaskDescription = optionalTaskDescription.filter(description -> !description.trim().isEmpty());
@@ -76,7 +62,7 @@ public class TaskController {
             throw new BadRequestException(String.format("Task name can`t be empty"));
 
         TaskEntity taskEntity = optionalTaskId
-                .map(controllerHelper::getTaskEntityOrThrowException)
+                .map(controllerHelper::getTaskEntity)
                 .orElseGet(TaskEntity::new);
 
         taskEntity.setTaskState(taskStateEntity);
@@ -87,21 +73,22 @@ public class TaskController {
 
         TaskEntity savedTask = taskRepository.saveAndFlush(taskEntity);
 
-        return ResponseEntity.ok(taskDtoFactory.makeProjectDto(savedTask));
+        return TaskDto.makeDefault(savedTask);
 
     }
 
     @DeleteMapping(DELETE_TASK)
-    public ResponseEntity<AckDto> deleteTask(
+    public boolean deleteTask(
             @PathVariable("task_id") Long taskId,
             @PathVariable("task-state_id") Long taskStateId) {
 
-        controllerHelper.getTaskStateEntityOrThrowException(taskStateId);
+        controllerHelper.getTaskStateEntity(taskStateId);
 
-        controllerHelper.getTaskEntityOrThrowException(taskId);
+        controllerHelper.getTaskEntity(taskId);
 
         taskRepository.deleteById(taskId);
-        return ResponseEntity.ok(AckDto.makeDefault(true));
+
+        return true;
     }
 
 }

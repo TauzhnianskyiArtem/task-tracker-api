@@ -37,4 +37,6 @@ public class TaskStateEntity {
     @ManyToOne
     @JoinColumn(name = "project_id")
     ProjectEntity project;
+
+
 }

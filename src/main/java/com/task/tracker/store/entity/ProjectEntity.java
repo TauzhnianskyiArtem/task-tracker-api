@@ -31,4 +31,5 @@ public class ProjectEntity {
     @Builder.Default
     @OneToMany(mappedBy = "project")
     List<TaskStateEntity> taskStates = new ArrayList<>();
+
 }

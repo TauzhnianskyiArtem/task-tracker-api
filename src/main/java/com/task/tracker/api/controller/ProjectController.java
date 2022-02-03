@@ -1,16 +1,13 @@
 package com.task.tracker.api.controller;
 
 import com.task.tracker.api.controller.helper.ControllerHelper;
-import com.task.tracker.api.dto.AckDto;
 import com.task.tracker.api.dto.ProjectDto;
 import com.task.tracker.api.exception.BadRequestException;
-import com.task.tracker.api.factory.ProjectDtoFactory;
 import com.task.tracker.store.entity.ProjectEntity;
 import com.task.tracker.store.repository.ProjectRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.transaction.Transactional;
@@ -28,7 +25,6 @@ public class ProjectController {
 
     ControllerHelper controllerHelper;
 
-    ProjectDtoFactory projectDtoFactory;
 
     ProjectRepository projectRepository;
 
@@ -39,7 +35,7 @@ public class ProjectController {
     public static final String CREATE_OR_UPDATE_PROJECT = "/api/projects";
 
     @GetMapping(FETCH_PROJECTS)
-    public ResponseEntity<List<ProjectDto>> fetchProjects(
+    public List<ProjectDto> fetchProjects(
             @RequestParam(value = "prefix_name", required = false) Optional<String> optionalPrefixName
     ) {
         optionalPrefixName = optionalPrefixName.filter(prefixName -> !prefixName.trim().isEmpty());
@@ -47,14 +43,14 @@ public class ProjectController {
                 .map(projectRepository::streamAllByNameContainingIgnoreCase)
                 .orElseGet(() -> projectRepository.findAll().stream());
 
-        return ResponseEntity.ok(projectStream
-                .map(projectDtoFactory::makeProjectDto)
-                .collect(Collectors.toList()));
+        return projectStream
+                .map(ProjectDto::makeDefault)
+                .collect(Collectors.toList());
 
     }
 
     @PostMapping(CREATE_OR_UPDATE_PROJECT)
-    public ResponseEntity<ProjectDto> createOrUpdateProject(
+    public ProjectDto createOrUpdateProject(
             @RequestParam(value = "project_id", required = false) Optional<Long> optionalProjectId,
             @RequestParam(value = "project_name", required = false) Optional<String> optionalProjectName
     ){
@@ -67,7 +63,7 @@ public class ProjectController {
             throw new BadRequestException(String.format("Project name can`t be empty"));
 
         final ProjectEntity project = optionalProjectId
-                .map(controllerHelper::getProjectEntityOrThrowException)
+                .map(controllerHelper::getProjectEntity)
                 .orElseGet(ProjectEntity::new);
 
         optionalProjectName
@@ -87,19 +83,19 @@ public class ProjectController {
 
         ProjectEntity savedProject = projectRepository.saveAndFlush(project);
 
-        return ResponseEntity.ok(projectDtoFactory.makeProjectDto(savedProject));
+        return ProjectDto.makeDefault(savedProject);
 
     }
 
 
     @DeleteMapping(DELETE_PROJECT)
-    public ResponseEntity<AckDto> deleteProject(@PathVariable("project_id") Long projectId) {
+    public boolean deleteProject(@PathVariable("project_id") Long projectId) {
 
-        controllerHelper.getProjectEntityOrThrowException(projectId);
+        controllerHelper.getProjectEntity(projectId);
 
         projectRepository.deleteById(projectId);
 
-        return ResponseEntity.ok(AckDto.makeDefault(true));
+        return true;
     }
 
 
