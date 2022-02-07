@@ -29,7 +29,7 @@ public class ProjectEntity {
     Instant createdAt = Instant.now();
 
     @Builder.Default
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project", orphanRemoval = true)
     List<TaskStateEntity> taskStates = new ArrayList<>();
 
 }

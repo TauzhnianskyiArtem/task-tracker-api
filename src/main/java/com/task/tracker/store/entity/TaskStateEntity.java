@@ -25,13 +25,11 @@ public class TaskStateEntity {
 
     String name;
 
-    Integer ordinal;
-
     @Builder.Default
     Instant createdAt = Instant.now();
 
     @Builder.Default
-    @OneToMany(mappedBy = "taskState")
+    @OneToMany(mappedBy = "taskState", orphanRemoval = true)
     List<TaskEntity> tasks = new ArrayList<>();
 
     @ManyToOne

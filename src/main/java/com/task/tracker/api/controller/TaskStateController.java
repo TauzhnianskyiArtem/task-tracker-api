@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequiredArgsConstructor
@@ -54,16 +53,14 @@ public class TaskStateController {
     public TaskStateDto createOrUpdateTaskState(
             @PathVariable("project_id") Long projectId,
             @RequestParam(value = "task-state_id", required = false) Optional<Long> optionalTakStateId,
-            @RequestParam(value = "task-state_name", required = false) Optional<String> optionalTaskStateName,
-            @RequestParam(value = "task-state_ordinal", required = false) Optional<Integer> optionalTaskStateOrdinal){
+            @RequestParam(value = "task-state_name", required = false) Optional<String> optionalTaskStateName
+    ){
 
         ProjectEntity projectEntity = controllerHelper.getProjectEntity(projectId);
 
         optionalTaskStateName = optionalTaskStateName.filter(name -> !name.trim().isEmpty());
 
-        boolean isCreate = !optionalTakStateId.isPresent();
-
-        if(isCreate && !optionalTaskStateName.isPresent() && !optionalTaskStateOrdinal.isPresent())
+        if(!optionalTakStateId.isPresent() && !optionalTaskStateName.isPresent())
             throw new BadRequestException(String.format("Task state name or ordinal can`t be empty"));
 
         final TaskStateEntity taskState = optionalTakStateId
@@ -84,20 +81,6 @@ public class TaskStateController {
                                 );
                             });
                     taskState.setName(taskStateName);
-                } );
-
-        optionalTaskStateOrdinal
-                .ifPresent(taskStateOrdinal -> {
-
-                    taskStateRepository
-                            .findByOrdinalAndProject(taskStateOrdinal, projectEntity)
-                            .filter(anotherTaskState -> !Objects.equals(anotherTaskState.getId(), taskState.getId()))
-                            .ifPresent((anotherTaskState) -> {
-                                 throw  new BadRequestException(
-                                        String.format("Task state with '%s' ordinal already exists.", taskStateOrdinal)
-                                );
-                            });
-                    taskState.setOrdinal(taskStateOrdinal);
                 } );
 
         TaskStateEntity savedTaskState = taskStateRepository.saveAndFlush(taskState);

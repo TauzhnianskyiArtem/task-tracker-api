@@ -1,7 +1,6 @@
 package com.task.tracker.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.task.tracker.store.entity.TaskEntity;
 import com.task.tracker.store.entity.TaskStateEntity;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -21,9 +20,6 @@ public class TaskStateDto {
     String name;
 
     @NonNull
-    Integer ordinal;
-
-    @NonNull
     @JsonProperty("created_at")
     Instant createdAt;
 
@@ -32,7 +28,6 @@ public class TaskStateDto {
         return TaskStateDto.builder()
                 .id(entity.getId())
                 .name(entity.getName())
-                .ordinal(entity.getOrdinal())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

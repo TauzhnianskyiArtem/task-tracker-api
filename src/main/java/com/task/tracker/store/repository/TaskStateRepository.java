@@ -12,5 +12,4 @@ public interface TaskStateRepository extends JpaRepository<TaskStateEntity, Long
     List<TaskStateEntity> findByProject(ProjectEntity project);
 
     Optional<TaskStateEntity> findByNameAndProject(String name, ProjectEntity project);
-    Optional<TaskStateEntity> findByOrdinalAndProject(Integer ordinal, ProjectEntity project);
 }
